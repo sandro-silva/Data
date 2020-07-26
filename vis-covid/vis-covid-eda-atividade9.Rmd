@@ -1,0 +1,185 @@
+---
+title: "Análise Exploratória de Dados do e-SUS"
+author: "Sandro Silva"
+date: "26/07/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# instale e adicione outros pacotes que achar necessário
+library(tidyverse)
+library(here)
+library(lubridate)
+library(scales)
+
+# configurações para evitar mostrar mensagens e erros
+knitr::opts_chunk$set(error = FALSE, comment = NA, warning = FALSE, message = FALSE)
+```
+
+# Descrição da atividade
+
+Os dados dessa análise exploratória foram coletados do e-SUS Notifica, que possui informações de notificações de suspeitos e confirmados de COVID-19 nos municípios do estado da Paraíba.
+
+
+# Carregando os dados
+
+```{r, include=FALSE}
+esus_pb <- read.csv2(here("data", "dados-pb.csv"), stringsAsFactors = TRUE, 
+                  fileEncoding = "latin1",
+                  na.strings = c("undefined", "", "null")) %>%
+  rename(id = 1) %>%
+  janitor::clean_names() %>%
+  mutate_at(vars(starts_with("data")), as_date)
+```
+
+Visão geral dos dados:
+
+```{r echo=FALSE}
+glimpse(esus_pb)
+```
+
+# Alguns atributos explorados
+
+## Tipos, resultados e estados dos teste
+
+A coluna `resultado_teste` informa se o teste para COVID-19 foi Positivo, Negativo ou _NA_ se ainda não há resultado registrado. A quantidade e percentual de cada um foi:
+
+```{r echo=FALSE}
+esus_pb %>%
+  group_by(resultado_teste) %>%
+  summarise(quantidade = n()) %>% # n() aqui vai retornar a quantidade por grupo
+  mutate(percentual = percent(quantidade / sum(quantidade), accuracy = 1))
+```
+
+Observamos que aproximadamente metade dos notificados testaram negativo, 25% testaram positivo e os outros 25% não possuem resultado de teste.
+
+
+A tabela `tipo_teste` indica qual tipo de teste para COVID-19 foi realizado. Notamos que o maior percentual foi do tipo Teste Rápido - Anticorpo, com 64% do tipo de testes realizados.
+
+```{r echo=FALSE}
+esus_pb %>%
+  group_by(tipo_teste) %>%
+  summarise(quantidade = n()) %>% # n() aqui vai retornar a quantidade por grupo
+  mutate(percentual = percent(quantidade / sum(quantidade), accuracy = 1))
+```
+
+
+A tabela `estado_teste` indica se o teste foi coletado, concluído, solicitado ou não solicitado. Observamos que 75% dos testes foram concluídos.
+
+
+```{r echo=FALSE}
+esus_pb %>%
+  group_by(estado_teste) %>%
+  summarise(quantidade = n()) %>% # n() aqui vai retornar a quantidade por grupo
+  mutate(percentual = percent(quantidade / sum(quantidade), accuracy = 1))
+```
+
+
+
+## Idade, sexo, profissão, localidade, comorbidades
+
+A coluna `idade` informa a idade de cada paciente registrado.
+
+Estatísticas das idades dos pacientes registrados:
+```{r echo=FALSE}
+summary(esus_pb$idade)
+```
+
+Podemos gerar um box-plot para visualizar as idades:
+
+```{r echo=FALSE}
+ggplot(esus_pb, aes(idade)) +
+  geom_boxplot()
+```
+
+
+O gráfico de barras abaixo apresenta a frequência de casos da Covid-19 de crianças na faixa etária de 0 a 12 anos de idade.
+
+```{r echo=FALSE}
+esus_pb %>% 
+  filter(idade <= 12) %>% 
+  ggplot() +
+  geom_bar(aes(x = idade), color = "black", fill = "light blue")
+
+```
+
+O gráfico de barras abaixo apresenta a frequência de casos da Covid-19 de idosos a partir de 60 anos de idade.
+
+```{r echo=FALSE}
+esus_pb %>% 
+  filter(idade >= 60 , idade <= 110) %>% 
+  ggplot() +
+  geom_bar(aes(x = idade), color = "black", fill = "light blue")
+
+```
+
+
+A tabela abaixo apresenta as profissões em que ocorreram casos da Covid-19.
+
+```{r echo=FALSE}
+esus_pb %>%
+  group_by(cbo) %>%
+  summarise(quantidade = n()) %>% # n() aqui vai retornar a quantidade por grupo
+  mutate(percentual = percent(quantidade / sum(quantidade), accuracy = 1))
+```
+
+
+A tabela abaixo apresenta as quantidades e percentuais por municipios. Onde se destacam João Pessoa com 30% e Campina Garnde com 10% dos casos.
+
+```{r echo=FALSE}
+esus_pb %>%
+  group_by(municipio) %>%
+  summarise(quantidade = n()) %>% # n() aqui vai retornar a quantidade por grupo
+  mutate(percentual = percent(quantidade / sum(quantidade), accuracy = 1))
+```
+
+
+A tabela abaixo apresenta as comordidades de pacientes com Covid-19. Que indica as doenças prévias do paciente, que podem ser fator de risco.
+
+```{r echo=FALSE}
+esus_pb %>%
+  group_by(condicoes) %>%
+  summarise(quantidade = n()) %>% # n() aqui vai retornar a quantidade por grupo
+  mutate(percentual = percent(quantidade / sum(quantidade), accuracy = 1))
+```
+
+
+
+# Percentuais de Homens e Mulheres
+
+O sexo que apresentou maior percentual de resultados positivos foram as mulheres. A proporção do sexo feminino foi 55% e o masculino 45%.
+
+```{r echo=FALSE}
+esus_pb %>%
+  group_by(sexo) %>%
+  summarise(quantidade = n()) %>% # n() aqui vai retornar a quantidade por grupo
+  mutate(percentual = percent(quantidade / sum(quantidade), accuracy = 1))
+```
+
+
+
+# Percentuais de Profissionais de Saúde
+
+
+O percentual de profissionais de saúde com covid-19 foi de 14%.
+
+```{r echo=FALSE}
+esus_pb %>%
+  group_by(profissional_saude) %>%
+  summarise(quantidade = n()) %>% # n() aqui vai retornar a quantidade por grupo
+  mutate(percentual = percent(quantidade / sum(quantidade), accuracy = 1))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
